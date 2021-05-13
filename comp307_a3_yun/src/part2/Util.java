@@ -55,9 +55,12 @@ public class Util {
             String regex = "\\s+"; // split by the space
             List<String> parseAttributes_string = new ArrayList<String>(
                     Arrays.asList(line.split(regex)));
+            parseAttributes_string.remove(0);// remove the 1st element since it is the empty
+                                             // string
 
             int classLabel = -1;
             if (isLabelled) {
+                // System.out.println(parseAttributes_string.size());
                 assert parseAttributes_string.size() == 13;
                 // remove the last attribute and add it into the classLabel list
                 classLabel = (Integer
@@ -73,7 +76,7 @@ public class Util {
             emailsToReturn.add(new Email(attributeList_integer, classLabel));
 
             line = bReader.readLine();// read next line
-            if (line.isEmpty() || line == null) {
+            if (line == null || line.isEmpty()) {
                 break;
             }
         }

@@ -7,5 +7,6 @@ public class Main {
 
         new NaiveBayes(labelled_file, unLabelled_file);
 
+        System.out.println("Finish");
     }
 }
