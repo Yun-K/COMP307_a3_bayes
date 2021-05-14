@@ -18,7 +18,7 @@ public class NaiveBayes {
      * <p>
      * i.e P(Class=spam=1) = ? && P(Class=non-spam=0) = ?
      * <p>
-     * p(attribute 0,...,att 11 = 1 ) =?
+     * p(attribute 0 = 1),...,p(att 11 = 1 ) =?
      */
     private Map<String, Double> label_prior_prob_map;
 
@@ -33,6 +33,13 @@ public class NaiveBayes {
         this.train_labelledEmailList = Util.readFile(labelledFilePath);
         this.test_unlabelledEmailList = Util.readFile(unLabelledFilePath);
 
+        // email for solving zero occurance
+        Email fakeEmail = new Email(new ArrayList<Integer>() {
+            { // we've 12 attributes in total, so assign it first
+                for (int i = 0; i < 12; i++)
+                    add(1);
+            }
+        }, 0);
         // calculate and assign the prior prob from train_dataset
         this.label_prior_prob_map = calculatePriorProbability(this.train_labelledEmailList);
 
@@ -46,8 +53,30 @@ public class NaiveBayes {
 
     }
 
+    /**
+     * Description: <br/>
+     * To classify unlabelled Email objects, and print the classify result on the screen.
+     * <p>
+     * Need to calculate P(Spam | att0,...,att11) & P(noSpam | att0,...,att11), then see
+     * classify this instance with the higher one.
+     * 
+     * @author Yun Zhou
+     */
     public void test_applyClassifier() {
+        // for (Email email : test_unlabelledEmailList) {
+        // email.getAttributeList();
+        //
+        //
+        // }
 
+    }
+
+    public double getLikeliHood(String attribute, String classLabel_spamOrNotSpam) {
+        double toReturn = 0;
+        double classLabel_prob = this.label_prior_prob_map.get(classLabel_spamOrNotSpam);
+        double attr_prob = this.label_prior_prob_map.get(attribute);
+
+        return toReturn;
     }
 
     /**
@@ -108,7 +137,7 @@ public class NaiveBayes {
         // calculte & assign the p(att)
         for (int attIndex = 0; attIndex < attributeOccuranceList.size(); attIndex++) {
             double prob = attributeOccuranceList.get(attIndex) / labelledEmails.size();
-            String key = "att" + attIndex;
+            String key = "before_att" + attIndex;
             tempMap.put(key, prob);
             // System.out.println(key + "\t" + prob);
         }
@@ -123,10 +152,9 @@ public class NaiveBayes {
                            + "\tSpam prob, P(Spam)= " + spamProb
                            + "\tNo-spam prob,P(noSpam)= " + noSpamProb);
 
-        tempMap.put("spam", spamProb);
-        tempMap.put("noSpam", noSpamProb);
+        tempMap.put("before_spam", spamProb);
+        tempMap.put("before_noSpam", noSpamProb);
         return tempMap;
-
         // this.label_prob_map.put("spam", spamProb);
         // this.label_prob_map.put("noSpam", noSpamProb);
 
