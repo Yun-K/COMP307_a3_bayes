@@ -12,12 +12,13 @@ public class NaiveBayes {
     private List<Email> test_unlabelledEmailList;
 
     /**
-     * map classLabel to the prior probability. 1 for true, 0 for false.
-     * 
+     * map classLabel to the prior probability.
      * <p>
-     * i.e P(Class=spam) = ? && P(Class=non-spam) = ?
+     * 1 for true, 0 for false.
      * <p>
-     * p(attribute:Viagra) =
+     * i.e P(Class=spam=1) = ? && P(Class=non-spam=0) = ?
+     * <p>
+     * p(attribute 0,...,att 11 = 1 ) =?
      */
     private Map<String, Double> label_prior_prob_map;
 
@@ -106,15 +107,15 @@ public class NaiveBayes {
         // calculte & assign the p(att)
         assert attributeOccuranceList.size() == 12;
         for (int attIndex = 0; attIndex < attributeOccuranceList.size(); attIndex++) {
-            double prob = attributeOccuranceList.get(attIndex) / train_labelledEmailList.size();
+            double prob = attributeOccuranceList.get(attIndex) / labelledEmails.size();
             String key = "att" + attIndex;
             tempMap.put(key, prob);
             System.out.println(key + "\t" + prob);
         }
 
         // assigning the spam class label: p(class)
-        double spamProb = spamOccurance / train_labelledEmailList.size();
-        double noSpamProb = nonSpamOccurance / train_labelledEmailList.size();
+        double spamProb = spamOccurance / labelledEmails.size();
+        double noSpamProb = nonSpamOccurance / labelledEmails.size();
         System.out.println(spamProb + "\t" + noSpamProb);
         assert spamProb + noSpamProb == 1;// assertion check
 
