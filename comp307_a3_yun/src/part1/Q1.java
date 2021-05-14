@@ -1,5 +1,11 @@
 package part1;
 
+/**
+ * Description: <br/>
+ *
+ * @author Yun Zhou 300442776
+ * @version
+ */
 public class Q1 {
 
     static StringBuffer sb = new StringBuffer("X|Y|Z|P(X,Y,Z) ( i.e. P(X)*P(Y|X)*P(Z|Y) )|\n");
