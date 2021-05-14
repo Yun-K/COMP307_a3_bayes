@@ -8,6 +8,9 @@ import java.util.Map;
 
 public class NaiveBayes {
 
+    /** string for before adding emails to address zero occurance case */
+    String preFix = "before_";
+
     /**
      * spamEmail, it's for solving zero occurance, this email got everything with true value
      */
@@ -160,7 +163,7 @@ public class NaiveBayes {
             double prob = attributeOccuranceList.get(attIndex) / labelledEmails.size();
             StringBuffer key = new StringBuffer();
             if (!isAddZero) {
-                key.append("before_");
+                key.append(this.preFix);
             }
             key.append(attIndex);
 
@@ -179,13 +182,13 @@ public class NaiveBayes {
                            + "\tSpam prob, P(Spam)= " + spamProb
                            + "\tNo-spam prob,P(noSpam)= " + noSpamProb);
 
-        StringBuffer preFix = new StringBuffer();
+        StringBuffer tempPreFix = new StringBuffer();
         if (!isAddZero) {
-            preFix.append("before_");
+            tempPreFix.append(this.preFix);
         }
 
-        tempMap.put(preFix.toString() + "spam", spamProb);
-        tempMap.put(preFix.toString() + "noSpam", noSpamProb);
+        tempMap.put(tempPreFix.toString() + "spam", spamProb);
+        tempMap.put(tempPreFix.toString() + "noSpam", noSpamProb);
         return tempMap;
         // this.label_prob_map.put("spam", spamProb);
         // this.label_prob_map.put("noSpam", noSpamProb);
