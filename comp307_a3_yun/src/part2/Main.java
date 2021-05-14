@@ -5,7 +5,9 @@ public class Main {
         String labelled_file = "spamLabelled.dat";
         String unLabelled_file = "spamUnlabelled.dat";
 
-        new NaiveBayes(labelled_file, unLabelled_file);
+        NaiveBayes nBayesClassfier = new NaiveBayes(labelled_file, unLabelled_file);
+        nBayesClassfier.train_constructClassifier();
+        nBayesClassfier.test_applyClassifier();
 
         System.out.println("Finish");
     }
