@@ -91,6 +91,7 @@ public class NaiveBayes {
         putAllLikeliHood();
         // not sure if need to calculate the posterior of each attribute from labelledEmail.dat
         // getPosterior();
+        System.out.println("Done for the training process successfully.");
     }
 
     /**
@@ -107,20 +108,14 @@ public class NaiveBayes {
      * @author Yun Zhou
      */
     public void test_applyClassifier() {
-        // double result = 1.0;
-        for (Email email : test_unlabelledEmailList) {
-            double spamPosterior = getPosterior(email.getAttributeList(), this.spam);
-            double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
-            if (spamPosterior > noSpamPosterior) {
-                email.setPredicted_classLabel(1);
-            } else {
-                email.setPredicted_classLabel(0);
-            }
-        }
-
+        System.out.println("\nStart testing..................");
         //
-        double correctCount = 0.0;
+        double correctCount = 0.0, train_index = 0;
         for (Email email : train_labelledEmailList) {
+            if (train_index++ == 200) {
+                break;
+            }
+
             double spamPosterior = getPosterior(email.getAttributeList(), this.spam);
             double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
             // System.out.println(spamPosterior + "\n" + noSpamPosterior);
@@ -134,12 +129,33 @@ public class NaiveBayes {
                 correctCount++;
             }
         }
-        double acc = correctCount / train_labelledEmailList.size() * 100;
 
-        System.out.println("For labelledEmail set, my algorthim got "
-                           + correctCount + " correct out of " + train_labelledEmailList.size()
+        double acc = correctCount / (train_labelledEmailList.size() - 2) * 100;
+
+        System.out.println("For labelledEmail set, without added 2 emails(for zero occurance)\n"
+                           + "my algorthim got " + correctCount + " correct out of "
+                           + (train_labelledEmailList.size() - 2)
                            + "\nacc=" + String.format("%.2f", acc) + "%");
 
+        StringBuffer sb = new StringBuffer("\nUnlabelled emails:");
+        int emailIndex = 0, spamClassify = 0, noSpamClassify = 0;
+        for (Email email : test_unlabelledEmailList) {
+            double spamPosterior = getPosterior(email.getAttributeList(), this.spam);
+            double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
+            if (spamPosterior > noSpamPosterior) {
+                email.setPredicted_classLabel(1);
+                spamClassify++;
+            } else {
+                email.setPredicted_classLabel(0);
+                noSpamClassify++;
+            }
+
+            sb.append("\nThis " + ++emailIndex + "th email is classify as "
+                      + (email.getPredicted_classLabel() == 0 ? "noSpam" : "spam") + " email.");
+        }
+        sb.append("\nTotally, we have " + spamClassify + " spam emails\n\tAnd " + noSpamClassify
+                  + " noSpam emails.");
+        System.out.println(sb.toString());
     }
 
     private double getPosterior(List<Integer> attributeList, String classLabel_spamOrNotSpam) {
@@ -335,7 +351,7 @@ public class NaiveBayes {
             double prob = attributeOccuranceList.get(attIndex) / labelledEmails.size();
             String key = tempPreFix + String.valueOf(attIndex);
             tempMap.put(key, prob);
-            System.out.println(key + "\t" + prob);
+            // System.out.println(key + "\t" + prob);
         }
 
         // assigning the spam class label: p(class)
