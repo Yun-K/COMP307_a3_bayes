@@ -192,28 +192,24 @@ public class NaiveBayes {
             // then calculate the corresponding attribute occurances
             for (int attIndex = 0; attIndex < email.getAttributeList().size(); attIndex++) {
                 int att_label = email.getAttributeList().get(attIndex);
+                String att_key = "";
                 if (att_label == 1) {
                     double oldVal = attributeOccuranceList.get(attIndex);
                     attributeOccuranceList.set(attIndex, (oldVal + 1));
                     // map this email into attribute=1=true
-                    String att_key = tempPreFix.toString() + this.preFix_true + "att" + attIndex;
-                    if (!aMap.containsKey(att_key)) {
-                        this.aMap.put(att_key, new ArrayList<Email>());
-                    }
-                    aMap.get(att_key).add(email);
-                    assert aMap.get(att_key).size() > 0;
-                    assert aMap.get(att_key).size() <= labelledEmails.size();
+                    att_key = tempPreFix.toString() + this.preFix_true + "att" + attIndex;
 
                 } else if (att_label == 0) {
                     // map this email into attribute=0=false
-                    String att_key = tempPreFix.toString() + this.preFix_false + "att" + attIndex;
-                    if (!aMap.containsKey(att_key)) {
-                        this.aMap.put(att_key, new ArrayList<Email>());
-                    }
-                    aMap.get(att_key).add(email);
-                    assert aMap.get(att_key).size() > 0;
-                    assert aMap.get(att_key).size() <= labelledEmails.size();
+                    att_key = tempPreFix.toString() + this.preFix_false + "att" + attIndex;
                 }
+
+                if (!aMap.containsKey(att_key)) {
+                    this.aMap.put(att_key, new ArrayList<Email>());
+                }
+                aMap.get(att_key).add(email);
+                assert aMap.get(att_key).size() > 0;
+                assert aMap.get(att_key).size() <= labelledEmails.size();
 
             }
         }
@@ -226,8 +222,8 @@ public class NaiveBayes {
         for (int attIndex = 0; attIndex < attributeOccuranceList.size(); attIndex++) {
             double prob = attributeOccuranceList.get(attIndex) / labelledEmails.size();
             String key = tempPreFix + String.valueOf(attIndex);
-            tempMap.put(key.toString(), prob);
-            System.out.println(key.toString() + "\t" + prob);
+            tempMap.put(key, prob);
+            System.out.println(key + "\t" + prob);
         }
 
         // assigning the spam class label: p(class)
