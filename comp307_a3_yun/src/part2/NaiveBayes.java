@@ -14,7 +14,7 @@ public class NaiveBayes {
     /** prefix for attributes */
     final String preFix_true = "true_", preFix_false = "false_";
 
-    final String spam = "spam_", noSpam = "noSpam_";
+    final String SPAM = "spam_", NOSPAM = "noSpam_";
 
     /**
      * spamEmail, it's for solving zero occurance, this email got everything with true value
@@ -109,18 +109,20 @@ public class NaiveBayes {
      */
     public void test_applyClassifier() {
         System.out.println("\nStart testing..................");
-        //
+        /*
+         * below are for labelledEmail.dat
+         */
         double correctCount = 0.0, train_index = 0;
         for (Email email : train_labelledEmailList) {
             if (train_index++ == 200) {
                 break;
             }
 
-            double spamPosterior = getPosterior(email.getAttributeList(), this.spam);
-            double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
+            double spamPosterior = getPosterior(email.getAttributeList(), this.SPAM);
+            double noSpamPosterior = getPosterior(email.getAttributeList(), this.NOSPAM);
             // System.out.println(spamPosterior + "\n" + noSpamPosterior);
 
-            // this.posterior_attLabel_prob_map.put();
+            // this.posterior_attLabel_prob_map.put(this.spam);
 
             // set the prediction label
             if (spamPosterior > noSpamPosterior) {
@@ -144,11 +146,15 @@ public class NaiveBayes {
                            + (train_labelledEmailList.size() - 2)
                            + "\nacc=" + String.format("%.2f", acc) + "%");
 
+        /*
+         * below are for unlabelledEmails.dat
+         * 
+         */
         StringBuffer sb = new StringBuffer("\nUnlabelled emails:");
         int emailIndex = 0, spamClassify = 0, noSpamClassify = 0;
         for (Email email : test_unlabelledEmailList) {
-            double spamPosterior = getPosterior(email.getAttributeList(), this.spam);
-            double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
+            double spamPosterior = getPosterior(email.getAttributeList(), this.SPAM);
+            double noSpamPosterior = getPosterior(email.getAttributeList(), this.NOSPAM);
             if (spamPosterior > noSpamPosterior) {
                 email.setPredicted_classLabel(1);
                 spamClassify++;
@@ -163,6 +169,17 @@ public class NaiveBayes {
         sb.append("\nTotally, we have " + spamClassify + " spam emails\n\tAnd " + noSpamClassify
                   + " noSpam emails.");
         System.out.println(sb.toString());
+    }
+
+    /**
+     * Description: <br/>
+     * For printing P(att1|spam),P(att1|noSpam),P(att2|spam),P(att2|noSpam)
+     * 
+     * @author Yun Zhou
+     */
+    public void printLikelihood_testSet() {
+        StringBuffer sBuffer = putAllLikeliHood();
+        System.out.println(sBuffer.toString());
     }
 
     /**
@@ -197,17 +214,33 @@ public class NaiveBayes {
 
     /**
      * Description: <br/>
-     * calculate all single likelihood and put them into the likelihood_att_prob_map
+     * calculate all single likelihood from the training Set and put them into the
+     * likelihood_att_prob_map
      * 
      * @author Yun Zhou
+     * @return output string of the full table of the P(Fi | C)
      */
-    private void putAllLikeliHood() {
-        // calculate all single likelihood and put them into the likelihood_att_prob_map
-        for (int i = 0; i < 12; i++) {
-            getSingleLikeliHood(i, false, this.noSpam);
-            getSingleLikeliHood(i, false, this.spam);
+    private StringBuffer putAllLikeliHood() {
+        // calculate all single likelihood from the training Set and put them into the
+        // likelihood_att_prob_map
+        // for (int i = 0; i < 12; i++) {
+        // getSingleLikeliHood(i, false, this.NOSPAM);
+        // getSingleLikeliHood(i, false, this.SPAM);
+        // }
+
+        StringBuffer sBuffer = new StringBuffer("\nPrinting the conditional_prob P(Fi|C)......\n");
+        sBuffer.append("\t\tP(F=1True | C=Spam)").append("\tP(F=0False | C=Spam)")
+                .append("\tP(F=1True | C=notSpam)").append("\tP(F=0False | C=notSpam)");
+        for (int attIndex = 0; attIndex < 12; attIndex++) {
+            sBuffer.append("\nFeature").append(attIndex);
+            sBuffer.append("\t").append(getSingleLikeliHood(attIndex, true, this.SPAM));
+            sBuffer.append("\t").append(getSingleLikeliHood(attIndex, false, this.SPAM));
+            sBuffer.append("\t").append(getSingleLikeliHood(attIndex, true, this.NOSPAM));
+            sBuffer.append("\t").append(getSingleLikeliHood(attIndex, false, this.NOSPAM));
         }
         System.out.println("Done for putting all likelihood into the Map");
+        return sBuffer;
+
     }
 
     /**
@@ -220,7 +253,7 @@ public class NaiveBayes {
      * i.e. P(att=? | ClassLabel=? )=?
      * 
      * @author Yun Zhou
-     * @param attribute
+     * @param attIndex
      * @param isAttTrue
      * @param classLabel_spamOrNotSpam
      * @return
@@ -247,11 +280,13 @@ public class NaiveBayes {
             }
         }
         String key = isAttTrue ? this.preFix_true : this.preFix_false;
+        key += classLabel_spamOrNotSpam;
         key += "att" + attIndex;
         likelihood_toReturn = attCount / limit_emails.size();
         this.likelihood_att_prob_map.put(key, likelihood_toReturn);
 
         String inverse_key = isAttTrue ? this.preFix_true : this.preFix_false;
+        inverse_key += classLabel_spamOrNotSpam.equals(this.NOSPAM) ? this.SPAM : this.NOSPAM;
         inverse_key += "att" + attIndex;
         double attInverse_likeliHood = inverse_attCount / limit_emails.size();
         // assert attInverse_likeliHood == 1 - likelihood_toReturn;
@@ -324,10 +359,10 @@ public class NaiveBayes {
             if (classLabel == 1) {
                 spamOccurance++;
                 // map classLabel to it's occurance
-                k = tempPreFix + this.spam;
+                k = tempPreFix + this.SPAM;
             } else if (classLabel == 0) {
                 nonSpamOccurance++;
-                k = tempPreFix + this.noSpam;
+                k = tempPreFix + this.NOSPAM;
             }
             if (!classAtt_EmailList_map.containsKey(k)) {// map corresponding email to this
                                                          // ClassLabel
@@ -383,8 +418,8 @@ public class NaiveBayes {
                            + "\tSpam prob, P(Spam)= " + spamProb
                            + "\n\tNo-spam prob,P(noSpam)= " + noSpamProb);
 
-        tempMap.put(tempPreFix.toString() + this.spam, spamProb);
-        tempMap.put(tempPreFix.toString() + this.noSpam, noSpamProb);
+        tempMap.put(tempPreFix.toString() + this.SPAM, spamProb);
+        tempMap.put(tempPreFix.toString() + this.NOSPAM, noSpamProb);
         // System.out.println(tempPreFix.toString() + this.spam + spamProb);
         return tempMap;
     }

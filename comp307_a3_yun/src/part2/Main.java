@@ -8,6 +8,7 @@ public class Main {
         NaiveBayes nBayesClassfier = new NaiveBayes(labelled_file, unLabelled_file);
         nBayesClassfier.train_constructClassifier();
         nBayesClassfier.test_applyClassifier();
+        nBayesClassfier.printLikelihood_testSet();
 
         System.out.println("Finish");
     }
