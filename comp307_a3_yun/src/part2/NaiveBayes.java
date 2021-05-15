@@ -56,16 +56,16 @@ public class NaiveBayes {
      * <p>
      * p(attribute0 = true|1),...,p(att 11 = true|1 ) = ?
      */
-    private Map<String, Double> prior_classAttLabel_prob_map;
+    private Map<String, Double> prior_classAttLabel_prob_map = new HashMap<String, Double>();
 
     /**
      * p(att=? | ClassLabel=?)
      * <p>
      * hint: classLabel=spam OR noSpam
      */
-    private Map<String, Double> likelihood_att_prob_map;
+    private Map<String, Double> likelihood_att_prob_map = new HashMap<String, Double>();
 
-    private Map<String, Double> posterior_attLabel_prob_map;
+    private Map<String, Double> posterior_attLabel_prob_map = new HashMap<String, Double>();
 
     /**
      * A constructor. It construct a new instance of NaiveBayes.
@@ -78,17 +78,6 @@ public class NaiveBayes {
         this.train_labelledEmailList = Util.readFile(labelledFilePath);
         this.test_unlabelledEmailList = Util.readFile(unLabelledFilePath);
 
-        // calculate and assign the prior prob from train_dataset
-        this.prior_classAttLabel_prob_map = calculatePriorProbability(this.train_labelledEmailList,
-                false);
-
-        // add emails to avoid the zero occurance
-        this.train_labelledEmailList.add(fakeEmail_allTrue);
-        this.train_labelledEmailList.add(fakeEmail_allFalse);
-        //
-        this.prior_classAttLabel_prob_map
-                .putAll(calculatePriorProbability(this.train_labelledEmailList, true));
-
     }
 
     /**
@@ -98,8 +87,10 @@ public class NaiveBayes {
      * @author Yun Zhou
      */
     public void train_constructClassifier() {
-
-        // getSingleLikeliHood(attribute, classLabel_spamOrNotSpam)
+        setUpPrior();
+        putAllLikeliHood();
+        // not sure if need to calculate the posterior of each attribute from labelledEmail.dat
+        // getPosterior();
     }
 
     /**
@@ -116,17 +107,81 @@ public class NaiveBayes {
      * @author Yun Zhou
      */
     public void test_applyClassifier() {
-        // for (Email email : test_unlabelledEmailList) {
-        // email.getAttributeList();
-        //
-        //
-        // }
+        // double result = 1.0;
+        for (Email email : test_unlabelledEmailList) {
+            double spamPosterior = getPosterior(email.getAttributeList(), this.spam);
+            double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
+            if (spamPosterior > noSpamPosterior) {
+                email.setPredicted_classLabel(1);
+            } else {
+                email.setPredicted_classLabel(0);
+            }
+        }
 
+        //
+        double correctCount = 0.0;
+        for (Email email : train_labelledEmailList) {
+            double spamPosterior = getPosterior(email.getAttributeList(), this.spam);
+            double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
+            // System.out.println(spamPosterior + "\n" + noSpamPosterior);
+
+            if (spamPosterior > noSpamPosterior) {
+                email.setPredicted_classLabel(1);
+            } else {
+                email.setPredicted_classLabel(0);
+            }
+            if (email.getClassLabel_spam_or_notSpam() == email.getPredicted_classLabel()) {
+                correctCount++;
+            }
+        }
+        double acc = correctCount / train_labelledEmailList.size() * 100;
+
+        System.out.println("For labelledEmail set, my algorthim got "
+                           + correctCount + " correct out of " + train_labelledEmailList.size()
+                           + "\nacc=" + String.format("%.2f", acc) + "%");
+
+    }
+
+    private double getPosterior(List<Integer> attributeList, String classLabel_spamOrNotSpam) {
+        double postprior_toReturn = 1;
+        // we dont need denominator since the comparing itself share the same denominator
+        // denominator should be P(att1,att2,att3,....,att12), which are from attributeList
+        double denominator = 1.0;
+
+        double classProb = this.prior_classAttLabel_prob_map.get(classLabel_spamOrNotSpam);
+        double numerator = classProb;
+
+        for (int attIndex = 0; attIndex < attributeList.size(); attIndex++) {
+            boolean isAttTrue = attributeList.get(attIndex) == 1 ? true : false;
+            numerator *= getSingleLikeliHood(attIndex, isAttTrue, classLabel_spamOrNotSpam);
+        }
+
+        postprior_toReturn = numerator / denominator;
+
+        return postprior_toReturn;
     }
 
     /**
      * Description: <br/>
-     * Calculate the likelihood prob of the given 2 input args.
+     * calculate all single likelihood and put them into the likelihood_att_prob_map
+     * 
+     * @author Yun Zhou
+     */
+    private void putAllLikeliHood() {
+        // calculate all single likelihood and put them into the likelihood_att_prob_map
+        for (int i = 0; i < 12; i++) {
+            getSingleLikeliHood(i, false, this.noSpam);
+            getSingleLikeliHood(i, false, this.spam);
+        }
+        System.out.println("Done for putting all likelihood into the Map");
+    }
+
+    /**
+     * Description: <br/>
+     * Calculate the likelihood prob from the given input args.
+     * <p>
+     * This method will return the likelihood and put att=true && att=false into the
+     * likelihood_att_prob_map.
      * <P>
      * i.e. P(att=? | ClassLabel=? )=?
      * 
@@ -143,16 +198,33 @@ public class NaiveBayes {
         // get emails with corresponding classLabel
         List<Email> limit_emails = this.classAtt_EmailList_map.get(classLabel_spamOrNotSpam);
 
-        double attCount = 0.0;
+        // for calcualting att=isAttTrue and att=isAttFalse
+        double attCount = 0.0,
+                inverse_attCount = 0.0;
+
         //
         for (Email email : limit_emails) {
             boolean isValTrue = email.getAttributeList().get(attIndex) == 1 ? true : false;
             // check if equals
             if (isValTrue == isAttTrue) {
                 attCount++;
+            } else {
+                inverse_attCount++;
             }
         }
+        String key = isAttTrue ? this.preFix_true : this.preFix_false;
+        key += "att" + attIndex;
         likelihood_toReturn = attCount / limit_emails.size();
+        this.likelihood_att_prob_map.put(key, likelihood_toReturn);
+
+        String inverse_key = isAttTrue ? this.preFix_true : this.preFix_false;
+        inverse_key += "att" + attIndex;
+        double attInverse_likeliHood = inverse_attCount / limit_emails.size();
+        // assert attInverse_likeliHood == 1 - likelihood_toReturn;
+        assert attInverse_likeliHood + likelihood_toReturn == 1;
+        this.likelihood_att_prob_map.put(inverse_key, attInverse_likeliHood);//
+
+        // System.out.println(attInverse_likeliHood + "\n" + (1 - likelihood_toReturn));
         return likelihood_toReturn;
 
         // double classLabel_prob =
@@ -160,6 +232,19 @@ public class NaiveBayes {
         // System.out.println(classLabel_prob);
         // double attr_prob = this.prior_classAttLabel_prob_map.get(attribute);
 
+    }
+
+    public void setUpPrior() {
+        // calculate and assign the prior prob from train_dataset
+        this.prior_classAttLabel_prob_map = calculatePriorProbability(this.train_labelledEmailList,
+                false);
+
+        // add emails to avoid the zero occurance
+        this.train_labelledEmailList.add(fakeEmail_allTrue);
+        this.train_labelledEmailList.add(fakeEmail_allFalse);
+        //
+        this.prior_classAttLabel_prob_map
+                .putAll(calculatePriorProbability(this.train_labelledEmailList, true));
     }
 
     /**
