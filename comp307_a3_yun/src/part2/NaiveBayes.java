@@ -9,7 +9,12 @@ import java.util.Map;
 public class NaiveBayes {
 
     /** string for before adding emails to address zero occurance case */
-    String preFix = "before_";
+    final String preFix_bef0 = "before_";
+
+    /** prefix for attributes */
+    final String preFix_true = "true_", preFix_false = "false_";
+
+    final String spam = "spam", noSpam = "noSpam";
 
     /**
      * spamEmail, it's for solving zero occurance, this email got everything with true value
@@ -25,7 +30,7 @@ public class NaiveBayes {
      * non-spam Email, it's for solving zero occurance, this email got everything with false
      * value.
      */
-    Email fakeEmail1_allFalse = new Email(new ArrayList<Integer>() {
+    Email fakeEmail_allFalse = new Email(new ArrayList<Integer>() {
         { // we've 12 attributes in total, so assign it first
             for (int i = 0; i < 12; i++)
                 add(0);
@@ -37,6 +42,13 @@ public class NaiveBayes {
     private List<Email> test_unlabelledEmailList;
 
     /**
+     * map the corresponing att/classLabel to it's Email list
+     * <p>
+     * for posterior & likelihood use
+     */
+    private Map<String, List<Email>> aMap = new HashMap<String, List<Email>>();
+
+    /**
      * map classLabel to the prior probability.
      * <p>
      * 
@@ -46,6 +58,11 @@ public class NaiveBayes {
      */
     private Map<String, Double> prior_classAttLabel_prob_map;
 
+    /**
+     * p(att=? | ClassLabel=?)
+     * <p>
+     * hint: classLabel=spam OR noSpam
+     */
     private Map<String, Double> likelihood_att_prob_map;
 
     private Map<String, Double> posterior_attLabel_prob_map;
@@ -64,6 +81,13 @@ public class NaiveBayes {
         // calculate and assign the prior prob from train_dataset
         this.prior_classAttLabel_prob_map = calculatePriorProbability(this.train_labelledEmailList,
                 false);
+
+        // add emails to avoid the zero occurance
+        this.train_labelledEmailList.add(fakeEmail_allTrue);
+        this.train_labelledEmailList.add(fakeEmail_allFalse);
+        //
+        this.prior_classAttLabel_prob_map
+                .putAll(calculatePriorProbability(this.train_labelledEmailList, true));
 
     }
 
@@ -93,7 +117,18 @@ public class NaiveBayes {
 
     }
 
-    public double getLikeliHood(String attribute, String classLabel_spamOrNotSpam) {
+    /**
+     * Description: <br/>
+     * Calculate the likelihood prob of the given 2 input args.
+     * <P>
+     * i.e. P(att=? | ClassLabel=? )=?
+     * 
+     * @author Yun Zhou
+     * @param attribute
+     * @param classLabel_spamOrNotSpam
+     * @return
+     */
+    public double getSingleLikeliHood(String attribute, String classLabel_spamOrNotSpam) {
         double toReturn = 0;
         double classLabel_prob = this.prior_classAttLabel_prob_map.get(classLabel_spamOrNotSpam);
         double attr_prob = this.prior_classAttLabel_prob_map.get(attribute);
@@ -120,8 +155,16 @@ public class NaiveBayes {
         double spamOccurance = 0.0;
         double nonSpamOccurance = 0.0;
 
-        // list for assigning attribute occurance among all the labelled email data set,
-        // only increase the corresponding index value iff the int att_label is equal to 1
+        // set up the tempPrefix
+        StringBuffer tempPreFix = isAddZero ? new StringBuffer("")
+                : new StringBuffer(this.preFix_bef0);
+
+        /*
+         * this list is for prior use which is P(att=?)=?
+         * 
+         * list for assigning attribute occurance among all the labelled email data set, only
+         * increase the corresponding index value iff the int att_label is equal to 1
+         */
         List<Double> attributeOccuranceList = new ArrayList<Double>() {
             { // we've 12 attributes in total, so assign it first
                 for (int i = 0; i < 12; i++)
@@ -132,23 +175,44 @@ public class NaiveBayes {
         for (Email email : labelledEmails) {
             // do the classLabel: spam or noSpam first
             int classLabel = email.getClassLabel_spam_or_notSpam();
+            String k = "";
             if (classLabel == 1) {
                 spamOccurance++;
+                // map classLabel to it's occurance
+                k = tempPreFix + this.spam;
             } else if (classLabel == 0) {
                 nonSpamOccurance++;
+                k = tempPreFix + this.noSpam;
             }
+            if (!aMap.containsKey(k)) {// map corresponding email to this ClassLabel
+                aMap.put(k, new ArrayList<Email>());
+            }
+            aMap.get(k).add(email);
 
             // then calculate the corresponding attribute occurances
             for (int attIndex = 0; attIndex < email.getAttributeList().size(); attIndex++) {
                 int att_label = email.getAttributeList().get(attIndex);
                 if (att_label == 1) {
-                    // check if it is null
-                    double oldVal = attributeOccuranceList.get(attIndex) == null ? 0
-                            : attributeOccuranceList.get(attIndex);
+                    double oldVal = attributeOccuranceList.get(attIndex);
                     attributeOccuranceList.set(attIndex, (oldVal + 1));
+                    // map this email into attribute=1=true
+                    String att_key = tempPreFix.toString() + this.preFix_true + "att" + attIndex;
+                    if (!aMap.containsKey(att_key)) {
+                        this.aMap.put(att_key, new ArrayList<Email>());
+                    }
+                    aMap.get(att_key).add(email);
+                    assert aMap.get(att_key).size() > 0;
+                    assert aMap.get(att_key).size() <= labelledEmails.size();
 
                 } else if (att_label == 0) {
-                    // do nothing
+                    // map this email into attribute=0=false
+                    String att_key = tempPreFix.toString() + this.preFix_false + "att" + attIndex;
+                    if (!aMap.containsKey(att_key)) {
+                        this.aMap.put(att_key, new ArrayList<Email>());
+                    }
+                    aMap.get(att_key).add(email);
+                    assert aMap.get(att_key).size() > 0;
+                    assert aMap.get(att_key).size() <= labelledEmails.size();
                 }
 
             }
@@ -161,13 +225,7 @@ public class NaiveBayes {
         // calculte & assign the p(att)
         for (int attIndex = 0; attIndex < attributeOccuranceList.size(); attIndex++) {
             double prob = attributeOccuranceList.get(attIndex) / labelledEmails.size();
-            StringBuffer key = new StringBuffer();
-            if (!isAddZero) {
-                key.append(this.preFix);
-            }
-            key.append(attIndex);
-
-            // String key = "before_att" + attIndex;
+            String key = tempPreFix + String.valueOf(attIndex);
             tempMap.put(key.toString(), prob);
             System.out.println(key.toString() + "\t" + prob);
         }
@@ -177,22 +235,16 @@ public class NaiveBayes {
         double noSpamProb = nonSpamOccurance / labelledEmails.size();
         assert spamProb + noSpamProb == 1;// assertion check
         System.out.println(
-                "According to the spamlabelled.dat, we can get:\n"
-                           + "Before applying Zero-Occurance:\n"
+                "According to the spamlabelled.dat, we can get:");
+        String tempString = isAddZero ? "After " : "Before ";// check if it's before or after
+        System.out.println(tempString + "applying Zero-Occurance:\n"
                            + "\tSpam prob, P(Spam)= " + spamProb
-                           + "\tNo-spam prob,P(noSpam)= " + noSpamProb);
+                           + "\n\tNo-spam prob,P(noSpam)= " + noSpamProb);
 
-        StringBuffer tempPreFix = new StringBuffer();
-        if (!isAddZero) {
-            tempPreFix.append(this.preFix);
-        }
-
-        tempMap.put(tempPreFix.toString() + "spam", spamProb);
-        tempMap.put(tempPreFix.toString() + "noSpam", noSpamProb);
+        tempMap.put(tempPreFix.toString() + this.spam, spamProb);
+        tempMap.put(tempPreFix.toString() + this.noSpam, noSpamProb);
+        // System.out.println(tempPreFix.toString());
         return tempMap;
-        // this.label_prob_map.put("spam", spamProb);
-        // this.label_prob_map.put("noSpam", noSpamProb);
-
     }
 
 }
