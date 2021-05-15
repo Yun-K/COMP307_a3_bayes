@@ -120,11 +120,16 @@ public class NaiveBayes {
             double noSpamPosterior = getPosterior(email.getAttributeList(), this.noSpam);
             // System.out.println(spamPosterior + "\n" + noSpamPosterior);
 
+            // this.posterior_attLabel_prob_map.put();
+
+            // set the prediction label
             if (spamPosterior > noSpamPosterior) {
                 email.setPredicted_classLabel(1);
             } else {
                 email.setPredicted_classLabel(0);
             }
+
+            // check if the prediction is correct
             if (email.getClassLabel_spam_or_notSpam() == email.getPredicted_classLabel()) {
                 correctCount++;
             }
@@ -132,8 +137,10 @@ public class NaiveBayes {
 
         double acc = correctCount / (train_labelledEmailList.size() - 2) * 100;
 
-        System.out.println("For labelledEmail set, without added 2 emails(for zero occurance)\n"
-                           + "my algorthim got " + correctCount + " correct out of "
+        System.out.println(
+                "For labelledEmail set, without count that 2 emails "
+                           + "which are used for solving zero occurance)\n"
+                           + "My algorthim got " + correctCount + " correct out of "
                            + (train_labelledEmailList.size() - 2)
                            + "\nacc=" + String.format("%.2f", acc) + "%");
 
@@ -158,6 +165,17 @@ public class NaiveBayes {
         System.out.println(sb.toString());
     }
 
+    /**
+     * Description: <br/>
+     * Get the posterior/conditional prob of the given classLabel.
+     * <p>
+     * i.e. P(class=spam |att1=.....att12...)=?
+     * 
+     * @author Yun Zhou
+     * @param attributeList
+     * @param classLabel_spamOrNotSpam
+     * @return
+     */
     private double getPosterior(List<Integer> attributeList, String classLabel_spamOrNotSpam) {
         double postprior_toReturn = 1;
         // we dont need denominator since the comparing itself share the same denominator
