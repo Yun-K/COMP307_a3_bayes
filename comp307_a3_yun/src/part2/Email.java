@@ -14,6 +14,8 @@ public class Email {
     /** right-most column for labelledSpam.data is the class: 1 = spam, 0 = non-spam. */
     private int classLabel_spam_or_notSpam = -1;
 
+    private int predicted_classLabel = -1;
+
     /**
      * A constructor. It construct a new instance of Email.
      *
@@ -73,6 +75,24 @@ public class Email {
      */
     public void setClassLabel_spam_or_notSpam(int classLabel_spam_or_notSpam) {
         this.classLabel_spam_or_notSpam = classLabel_spam_or_notSpam;
+    }
+
+    /**
+     * Get the predicted_classLabel.
+     *
+     * @return  the predicted_classLabel
+     */
+    public int getPredicted_classLabel() {
+        return predicted_classLabel;
+    }
+
+    /**
+     * Set the predicted_classLabel.
+     *
+     * @param   predicted_classLabel    the predicted_classLabel to set
+     */
+    public void setPredicted_classLabel(int predicted_classLabel) {
+        this.predicted_classLabel = predicted_classLabel;
     }
 
 }
