@@ -29,6 +29,9 @@ public class Q1 {
 
     public static void main(String[] args) {
         new Q1();
+        System.out.println("=============================================");
+        String sb = "as_atasdsat0";
+        System.out.println(sb.substring(sb.length() - 1));
 
     }
 

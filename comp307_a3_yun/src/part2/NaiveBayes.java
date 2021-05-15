@@ -14,7 +14,7 @@ public class NaiveBayes {
     /** prefix for attributes */
     final String preFix_true = "true_", preFix_false = "false_";
 
-    final String spam = "spam", noSpam = "noSpam";
+    final String spam = "spam_", noSpam = "noSpam_";
 
     /**
      * spamEmail, it's for solving zero occurance, this email got everything with true value
@@ -46,7 +46,7 @@ public class NaiveBayes {
      * <p>
      * for posterior & likelihood use
      */
-    private Map<String, List<Email>> aMap = new HashMap<String, List<Email>>();
+    private Map<String, List<Email>> classAtt_EmailList_map = new HashMap<String, List<Email>>();
 
     /**
      * map classLabel to the prior probability.
@@ -91,12 +91,15 @@ public class NaiveBayes {
 
     }
 
+    /**
+     * Description: <br/>
+     * Responsible for calculating likelihood, posterior.
+     * 
+     * @author Yun Zhou
+     */
     public void train_constructClassifier() {
-        /*
-         * first,Computes P(class | instance data)for each class, and choose the class with the
-         * highest probability.
-         */
 
+        // getSingleLikeliHood(attribute, classLabel_spamOrNotSpam)
     }
 
     /**
@@ -105,6 +108,10 @@ public class NaiveBayes {
      * <p>
      * Need to calculate P(Spam | att0,...,att11) & P(noSpam | att0,...,att11), then see
      * classify this instance with the higher one.
+     * <p>
+     * Computes P(class | instance data)for each class, and choose the class with the highest
+     * probability.
+     * 
      * 
      * @author Yun Zhou
      */
@@ -125,15 +132,34 @@ public class NaiveBayes {
      * 
      * @author Yun Zhou
      * @param attribute
+     * @param isAttTrue
      * @param classLabel_spamOrNotSpam
      * @return
      */
-    public double getSingleLikeliHood(String attribute, String classLabel_spamOrNotSpam) {
-        double toReturn = 0;
-        double classLabel_prob = this.prior_classAttLabel_prob_map.get(classLabel_spamOrNotSpam);
-        double attr_prob = this.prior_classAttLabel_prob_map.get(attribute);
+    public double getSingleLikeliHood(int attIndex, boolean isAttTrue,
+            String classLabel_spamOrNotSpam) {
+        double likelihood_toReturn = 0;
 
-        return toReturn;
+        // get emails with corresponding classLabel
+        List<Email> limit_emails = this.classAtt_EmailList_map.get(classLabel_spamOrNotSpam);
+
+        double attCount = 0.0;
+        //
+        for (Email email : limit_emails) {
+            boolean isValTrue = email.getAttributeList().get(attIndex) == 1 ? true : false;
+            // check if equals
+            if (isValTrue == isAttTrue) {
+                attCount++;
+            }
+        }
+        likelihood_toReturn = attCount / limit_emails.size();
+        return likelihood_toReturn;
+
+        // double classLabel_prob =
+        // this.prior_classAttLabel_prob_map.get(classLabel_spamOrNotSpam);
+        // System.out.println(classLabel_prob);
+        // double attr_prob = this.prior_classAttLabel_prob_map.get(attribute);
+
     }
 
     /**
@@ -184,10 +210,11 @@ public class NaiveBayes {
                 nonSpamOccurance++;
                 k = tempPreFix + this.noSpam;
             }
-            if (!aMap.containsKey(k)) {// map corresponding email to this ClassLabel
-                aMap.put(k, new ArrayList<Email>());
+            if (!classAtt_EmailList_map.containsKey(k)) {// map corresponding email to this
+                                                         // ClassLabel
+                classAtt_EmailList_map.put(k, new ArrayList<Email>());
             }
-            aMap.get(k).add(email);
+            classAtt_EmailList_map.get(k).add(email);// add email to the list
 
             // then calculate the corresponding attribute occurances
             for (int attIndex = 0; attIndex < email.getAttributeList().size(); attIndex++) {
@@ -204,12 +231,12 @@ public class NaiveBayes {
                     att_key = tempPreFix.toString() + this.preFix_false + "att" + attIndex;
                 }
 
-                if (!aMap.containsKey(att_key)) {
-                    this.aMap.put(att_key, new ArrayList<Email>());
+                if (!classAtt_EmailList_map.containsKey(att_key)) {
+                    this.classAtt_EmailList_map.put(att_key, new ArrayList<Email>());
                 }
-                aMap.get(att_key).add(email);
-                assert aMap.get(att_key).size() > 0;
-                assert aMap.get(att_key).size() <= labelledEmails.size();
+                classAtt_EmailList_map.get(att_key).add(email);
+                assert classAtt_EmailList_map.get(att_key).size() > 0;
+                assert classAtt_EmailList_map.get(att_key).size() <= labelledEmails.size();
 
             }
         }
@@ -239,7 +266,7 @@ public class NaiveBayes {
 
         tempMap.put(tempPreFix.toString() + this.spam, spamProb);
         tempMap.put(tempPreFix.toString() + this.noSpam, noSpamProb);
-        // System.out.println(tempPreFix.toString());
+        // System.out.println(tempPreFix.toString() + this.spam + spamProb);
         return tempMap;
     }
 
