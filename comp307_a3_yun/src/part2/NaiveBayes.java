@@ -1,7 +1,6 @@
 package part2;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +88,7 @@ public class NaiveBayes {
     public void train_constructClassifier() {
         setUpPrior();
         putAllLikeliHood();
+        System.out.println("Done for putting all likelihood into the Map");
         // not sure if need to calculate the posterior of each attribute from labelledEmail.dat
         // getPosterior();
         System.out.println("Done for the training process successfully.");
@@ -108,7 +108,7 @@ public class NaiveBayes {
      * @author Yun Zhou
      */
     public void test_applyClassifier() {
-        System.out.println("\nStart testing..................");
+        System.out.println("\nStart testing..................\n\nlabelled Emails prediction:");
         /*
          * below are for labelledEmail.dat
          */
@@ -144,30 +144,61 @@ public class NaiveBayes {
                            + "which are used for solving zero occurance)\n"
                            + "My algorthim got " + correctCount + " correct out of "
                            + (train_labelledEmailList.size() - 2)
-                           + "\nacc=" + String.format("%.2f", acc) + "%");
+                           + "\n\t\tacc=" + String.format("%.2f", acc) + "%");
 
         /*
-         * below are for unlabelledEmails.dat
+         * below are the prediction for unlabelledEmails.dat
          * 
          */
         StringBuffer sb = new StringBuffer("\nUnlabelled emails:");
-        int emailIndex = 0, spamClassify = 0, noSpamClassify = 0;
+        // String for storing email index that match the specificied classLabel
+        StringBuffer spamClassStringBuf = new StringBuffer(),
+                noSpamClassStringBuf = new StringBuffer();
+        // index, countNumber stuff
+        int emailIndex = 0, spamClassifyCount = 0, noSpamClassifyCount = 0;
+
+        // loop through unlabelled Emails
         for (Email email : test_unlabelledEmailList) {
+            ++emailIndex;
             double spamPosterior = getPosterior(email.getAttributeList(), this.SPAM);
             double noSpamPosterior = getPosterior(email.getAttributeList(), this.NOSPAM);
             if (spamPosterior > noSpamPosterior) {
                 email.setPredicted_classLabel(1);
-                spamClassify++;
+                spamClassifyCount++;
+                spamClassStringBuf.append(" " + emailIndex + " ");
             } else {
                 email.setPredicted_classLabel(0);
-                noSpamClassify++;
+                noSpamClassifyCount++;
+                noSpamClassStringBuf.append(" " + emailIndex + " ");
             }
 
-            sb.append("\nThis " + ++emailIndex + "th email is classify as "
-                      + (email.getPredicted_classLabel() == 0 ? "noSpam" : "spam") + " email.");
+            sb.append("\n");
+            sb.append(
+                    "\tThe posterior prob with P(C=spam | allFeatures), "
+                      + "which is only the numerator value: "
+                      + "\n\t\tP(C=Spam, allFeatures) (aka P(C=Spam) * P(C=Spam | allFeatures)) is: "
+                      + "\n\t\t\t" + spamPosterior);
+            sb.append("\n");
+            sb.append(
+                    "\tThe posterior prob with P(C=noSpam | allFeatures), "
+                      + "which is only the numerator value: "
+                      + "\n\t\tP(C=noSpam, allFeatures): (aka P(C=noSpam) * P(C=noSpam | allFeatures) ) is: "
+                      + "\n\t\t\t" + noSpamPosterior);
+
+            sb.append("\nBy comparing, we can get:\n\t").append(
+                    spamPosterior > noSpamPosterior ? "Spam is higher" : "NotSpam is higher");
+
+            sb.append("\nSo, " + emailIndex + "th email is classify as "
+                      + (email.getPredicted_classLabel() == 0 ? "notSpam" : "spam") + " email.");
+            sb.append("\n");
         }
-        sb.append("\nTotally, we have " + spamClassify + " spam emails\n\tAnd " + noSpamClassify
-                  + " noSpam emails.");
+        sb.append(
+                "\nTotally, we have " + spamClassifyCount + " spam emails:which are Email{"
+                  + spamClassStringBuf.toString() + "}"
+                  + "\n\tAnd "
+                  + noSpamClassifyCount + " notSpam emails:which are Email{"
+                  + noSpamClassStringBuf.toString()
+                  + "}");
         System.out.println(sb.toString());
     }
 
@@ -238,7 +269,7 @@ public class NaiveBayes {
             sBuffer.append("\t").append(getSingleLikeliHood(attIndex, true, this.NOSPAM));
             sBuffer.append("\t").append(getSingleLikeliHood(attIndex, false, this.NOSPAM));
         }
-        System.out.println("Done for putting all likelihood into the Map");
+
         return sBuffer;
 
     }
@@ -326,6 +357,7 @@ public class NaiveBayes {
      * @param labelledEmails
      *            the labelled data set for training
      * @param isAddZero
+     *            check if 2 emails (for avoiding zero occurance) are added or not
      * @return the map that map the classLabel to the corresponding probability
      */
     private Map<String, Double> calculatePriorProbability(List<Email> labelledEmails,
