@@ -1,0 +1,1 @@
+The navie bayes alogrthim java code is in src/part2 folder, got acc=87 on trainingSet, the output can be seen via sampleout_part2.txt, and the a3part2.jar is executable jar.

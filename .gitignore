@@ -2,8 +2,6 @@
 # https://gist.github.com/edesdan/6bb43343740bcd54ef0f56a384a2f66f
 
 .idea
-assignment1.iml
-
 
 
 # Eclipse
@@ -81,7 +79,7 @@ log/
 .mtj.tmp/
 
 # Package Files #
-*.jar
+# *.jar
 *.war
 *.ear
 *.zip
